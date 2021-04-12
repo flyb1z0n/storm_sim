@@ -1,10 +1,14 @@
 var ctx
 var borderSize = 0;
-var hasZip = false;
+var maxFrameCount = 20;
+
+var state = {
+    lightings : []
+}
 
 document.body.onkeyup = function (e) {
     if (e.keyCode == 32) {
-        clean();
+        state.lightings = []
     }
 }
 
@@ -25,11 +29,28 @@ function printBorder() {
 }
 
 function clickHandler() {
-    hasZip = true;
+     addZip();
+     addZip();
+}
 
-    clean();
-    render();
-
+function addZip() {
+    var pos_x = ctx.canvas.width / 2;
+    var pos_y = ctx.canvas.height / 2;
+    var initialSegment =   {
+        start: { x: pos_x, y: 0 },
+        end: { x: pos_x, y: ctx.canvas.height }
+    }
+    var segments = generateZip(
+        initialSegment
+    );
+    
+    state.lightings.push(
+        {
+            frameCount: 0,
+            segments : segments
+        }
+    )
+    
 }
 
 function getRandomInt(min, max) {
@@ -147,12 +168,12 @@ function printZip() {
     printSegments(segments2)
 }
 
-function printSegments(segments)
+function printSegments(segments, rgb)
 {
    
     segments.forEach(seg => {
         ctx.beginPath();
-        ctx.strokeStyle = 'white';
+        ctx.strokeStyle = 'rgb('+rgb+','+rgb+','+rgb+')';
         ctx.moveTo(seg.start.x, seg.start.y);
         ctx.lineTo(seg.end.x, seg.end.y);
         ctx.lineWidth = seg.isBranch ? 1 : 2;
@@ -173,14 +194,17 @@ function printLine(points) {
 
 
 function render() {
-    console.log("render")
-    printBorder()
+    clean()
+    state.lightings.forEach(el => {
+        var brightLossPerFramePercent = 1/maxFrameCount;
+        printSegments(el.segments, 255 - 255*(el.frameCount * brightLossPerFramePercent))
+        
+        el.frameCount ++;
+    })
 
-    if (hasZip) {
-        printZip()
-    }
-    hasZip = false;
-
+    state.lightings = state.lightings.filter(el => {
+        return el.frameCount < maxFrameCount;
+    })
 }
 
 function init() {
@@ -201,8 +225,7 @@ function init() {
     resizeCanvas();
 
 
-    setInterval(clickHandler, 200);
-
+    setInterval(render, 16);
 }
 
 init()
